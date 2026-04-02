@@ -1,8 +1,14 @@
-on: [push]
+on:
+  push:
+    tags:
+      - 'v*.*.*'
 
 jobs:
-  mi-job:
+  usar-receta-compartida:
     uses: ValentinaAstudillo/AUY1104-ValentinaAstudillo-Runner/.github/workflows/deploy-api.yaml@main
+    with:
+      image-name: demo-api
+      image-tag: ${{ github.ref_name }}
     secrets:
       DOCKER_USERNAME: ${{ secrets.DOCKER_USERNAME }}
       DOCKER_PASSWORD: ${{ secrets.DOCKER_PASSWORD }}
