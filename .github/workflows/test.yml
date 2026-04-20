@@ -1,0 +1,22 @@
+name: Pipeline de Test (validación)
+
+on:
+  push:
+    branches-ignore:
+      - main
+    tags-ignore:
+      - 'v*.*.*'
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Instalar dependencias
+        run: npm install
+
+      - name: Ejecutar tests
+        run: npm test
