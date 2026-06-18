@@ -20,3 +20,6 @@ jobs:
 
       - name: Ejecutar tests
         run: npm test
+
+      - name: Validar construccion Docker
+        run: docker build -t validacion-local:${{ github.sha }} .
