@@ -1,108 +1,153 @@
-# API de ejemplo — AUY1104 (Express + Docker)
+# SDLC003D - Shared Client CI/CD
 
-API académica mínima en **Node.js** y **Express**, pensada para practicar contenedores y pruebas con `curl`. Responde siempre en **JSON**.
+Aplicación de ejemplo desarrollada en **Node.js** y **Express**, utilizada para la implementación y validación de una arquitectura **CI/CD basada en GitHub Actions**, Docker y workflows reutilizables.
 
-## Requisitos
+## Objetivo
 
-- Node.js 20+ (ejecución local)
-- Docker (ejecución en contenedor)
+Este repositorio corresponde al componente **Cliente** de la solución CI/CD. Su responsabilidad es:
 
-## Ejecución local
+* Ejecutar validaciones automáticas en ramas de desarrollo.
+* Consumir workflows reutilizables definidos en un repositorio central.
+* Construir y publicar imágenes Docker mediante tags versionados.
+* Mantener separación entre procesos de validación y release.
+
+## Arquitectura
+
+La solución está compuesta por dos repositorios:
+
+### Repositorio Cliente
+
+`SDLC003D-SharedClient-ValentinaAstudillo`
+
+Contiene:
+
+* Código fuente de la aplicación.
+* Pruebas automatizadas.
+* Dockerfile.
+* Workflow de validación (`test.yml`).
+* Workflow consumidor (`client.yaml`).
+
+### Repositorio Central
+
+`SDLC003D-SharedWorkflows-ValentinaAstudillo`
+
+Contiene:
+
+* Workflow reutilizable (`deploy-api.yaml`).
+* Lógica centralizada para pruebas, construcción y publicación Docker.
+
+## Pipelines Implementados
+
+### Pipeline de Validación
+
+Archivo:
+
+```text
+.github/workflows/test.yml
+```
+
+Se ejecuta cuando existe un push en ramas distintas de `main`.
+
+Acciones realizadas:
+
+1. Checkout del repositorio.
+2. Instalación de dependencias.
+3. Ejecución de pruebas automatizadas.
+4. Validación de construcción Docker mediante:
+
+```bash
+docker build -t validacion-local:${{ github.sha }} .
+```
+
+Este pipeline no publica imágenes y permite validar cambios antes del release.
+
+### Pipeline de Release
+
+Archivo:
+
+```text
+.github/workflows/client.yaml
+```
+
+Se ejecuta únicamente mediante tags versionados:
+
+```text
+v*.*.*
+```
+
+Acciones realizadas:
+
+1. Invocación de workflow reutilizable central.
+2. Instalación de dependencias.
+3. Ejecución de pruebas.
+4. Construcción de imagen Docker.
+5. Publicación en Docker Hub.
+
+## Ejecución Local
+
+Instalar dependencias:
 
 ```bash
 npm install
+```
+
+Ejecutar aplicación:
+
+```bash
 npm start
 ```
 
-Por defecto escucha en el puerto **3000**: `http://localhost:3000`.
+La aplicación queda disponible en:
+
+```text
+http://localhost:3000
+```
 
 ## Docker
 
-Construir la imagen (desde esta carpeta):
+Construir imagen:
 
 ```bash
-docker build -t auy1104-api-ejemplo .
+docker build -t demo-api .
 ```
 
-Ejecutar el contenedor:
+Ejecutar contenedor:
 
 ```bash
-docker run --rm -p 3000:3000 -ti auy1104-api-ejemplo
+docker run -p 3000:3000 demo-api
 ```
-
-Si el puerto **3000** de tu equipo ya está ocupado, usa otro puerto en el host (el primero del mapeo) y deja **3000** como puerto del contenedor:
-
-```bash
-docker run --rm -p 8080:3000 -ti auy1104-api-ejemplo
-```
-
-En ese caso las URLs de los ejemplos serían `http://localhost:8080/...`.
 
 ## Endpoints
 
-| Método | Ruta | Descripción |
-|--------|------|-------------|
-| `GET` | `/health` | Estado del servicio |
-| `GET` | `/api/saludo` | Saludo en JSON; query opcional `nombre` |
-| `POST` | `/api/echo` | Devuelve en JSON el cuerpo enviado |
+| Método | Endpoint    | Descripción                      |
+| ------ | ----------- | -------------------------------- |
+| GET    | /health     | Verifica estado de la aplicación |
+| GET    | /api/saludo | Devuelve saludo en formato JSON  |
+| POST   | /api/echo   | Retorna el contenido enviado     |
 
-Cualquier otra ruta responde **404** con JSON: `{ "error": "Ruta no encontrada" }`.
+## Versiones
 
-## Ejemplos con `curl`
+Tags utilizados:
 
-Sustituye `localhost:3000` por `localhost:8080` (u otro) si mapeaste el contenedor distinto, por ejemplo `-p 8080:3000`.
+* v1.0.0
+* v1.0.1
+* v1.0.2
+* v1.0.3
 
-### `GET /health`
+Release actual:
 
-```bash
-curl -s http://localhost:3000/health
-```
+**v1.0.3**
 
-### `GET /api/saludo`
+## Tecnologías
 
-Sin parámetros (usa el nombre por defecto `estudiante`):
+* Node.js
+* Express
+* Docker
+* GitHub Actions
+* Docker Hub
 
-```bash
-curl -s http://localhost:3000/api/saludo
-```
+## Autor
 
-Con query `nombre`:
+Valentina Astudillo
 
-```bash
-curl -s "http://localhost:3000/api/saludo?nombre=Duoc"
-```
-
-### `POST /api/echo`
-
-Envía JSON en el cuerpo; la API responde con estado **201** y el objeto recibido en `recibido`.
-
-```bash
-curl -s -X POST http://localhost:3000/api/echo \
-  -H "Content-Type: application/json" \
-  -d '{"curso":"AUY1104","modulo":"Docker"}'
-```
-
-### Ruta inexistente (404)
-
-```bash
-curl -s http://localhost:3000/api/no-existe
-```
-
-## Estructura del proyecto
-
-```
-Docker de Ejemplo/
-├── Dockerfile
-├── .dockerignore
-├── package.json
-├── package-lock.json
-├── README.md
-└── src/
-    └── index.js
-```
-
-## Variables de entorno
-
-| Variable | Valor por defecto | Uso |
-|----------|-------------------|-----|
-| `PORT` | `3000` | Puerto donde escucha la app dentro del contenedor o en local |
+Evaluación - CI/CD Pipeline & Validación
