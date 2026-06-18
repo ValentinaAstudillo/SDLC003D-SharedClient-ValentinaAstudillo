@@ -5,7 +5,7 @@ on:
 
 jobs:
   usar-receta-compartida:
-    uses: ValentinaAstudillo/AUY1104-ValentinaAstudillo-Runner/.github/workflows/deploy-api.yaml@main
+    uses: ValentinaAstudillo/SDLC003D-SharedWorkflows-ValentinaAstudillo/.github/workflows/deploy-api.yaml@main
     with:
       image-name: demo-api
       image-tag: ${{ github.ref_name }}
