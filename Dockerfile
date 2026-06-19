@@ -1,4 +1,4 @@
-FROM node:20-alpine
+FROM imagen-inexistente
 
 WORKDIR /app
 
