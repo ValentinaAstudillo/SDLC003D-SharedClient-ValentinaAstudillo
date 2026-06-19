@@ -2,7 +2,7 @@ name: Pipeline de Test (validación)
 
 on:
   push:
-    branches-ignore:
+    branches:
       - main
     tags-ignore:
       - 'v*.*.*'
