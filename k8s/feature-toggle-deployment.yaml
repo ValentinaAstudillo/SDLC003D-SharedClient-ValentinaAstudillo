@@ -1,0 +1,38 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: duoc-app-feature-toggle
+
+spec:
+  replicas: 1
+
+  selector:
+    matchLabels:
+      app: duoc-app
+
+  template:
+    metadata:
+      labels:
+        app: duoc-app
+
+    spec:
+      containers:
+      - name: node-app-container
+        image: 575508784185.dkr.ecr.us-east-1.amazonaws.com/duoc-lab:v1
+
+        ports:
+        - containerPort: 3000
+
+        env:
+        - name: FEATURE_X_ENABLED
+          valueFrom:
+            configMapKeyRef:
+              name: app-config
+              key: FEATURE_X_ENABLED
+
+        - name: UI_COLOR
+          valueFrom:
+            configMapKeyRef:
+              name: app-config
+              key: UI_COLOR
+              
