@@ -1,0 +1,39 @@
+name: CD Pipeline EKS con Rollback
+
+on:
+  workflow_dispatch:
+
+jobs:
+  deploy-to-eks:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Configurar credenciales AWS
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-session-token: ${{ secrets.AWS_SESSION_TOKEN }}
+          aws-region: us-east-1
+
+      - name: Configurar kubectl con EKS
+        run: |
+          aws eks update-kubeconfig --name duoc-eks-cluster-cli --region us-east-1
+          kubectl get nodes
+
+      - name: Deploy to EKS
+        id: deploy-step
+        run: |
+          kubectl apply -f k8s/rolling-update.yaml
+          kubectl rollout status deployment/duoc-app-deployment --timeout=60s
+
+      - name: 🚨 Automated Rollback
+        if: failure()
+        run: |
+          echo "⚠️ Despliegue fallido detectado. Iniciando Rollback automático..."
+          kubectl rollout undo deployment/duoc-app-deployment
+          kubectl rollout status deployment/duoc-app-deployment --timeout=60s
+          echo "✅ Rollback completado."
