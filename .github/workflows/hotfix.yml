@@ -1,0 +1,40 @@
+name: Hotfix Production Deploy
+
+on:
+  push:
+    branches:
+      - 'hotfix/**'
+
+jobs:
+  fast-deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Configurar credenciales AWS
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-session-token: ${{ secrets.AWS_SESSION_TOKEN }}
+          aws-region: us-east-1
+
+      - name: Login ECR
+        run: |
+          aws ecr get-login-password --region us-east-1 | docker login --username AWS --password-stdin 575508784185.dkr.ecr.us-east-1.amazonaws.com
+
+      - name: Build & Push Hotfix Image
+        run: |
+          docker build -t 575508784185.dkr.ecr.us-east-1.amazonaws.com/duoc-lab:hotfix-${{ github.sha }} .
+          docker push 575508784185.dkr.ecr.us-east-1.amazonaws.com/duoc-lab:hotfix-${{ github.sha }}
+
+      - name: Configurar kubectl con EKS
+        run: |
+          aws eks update-kubeconfig --name duoc-eks-cluster-cli --region us-east-1
+
+      - name: Patch Deployment Immediately
+        run: |
+          kubectl set image deployment/duoc-app-deployment node-app-container=575508784185.dkr.ecr.us-east-1.amazonaws.com/duoc-lab:hotfix-${{ github.sha }}
+          kubectl rollout status deployment/duoc-app-deployment
