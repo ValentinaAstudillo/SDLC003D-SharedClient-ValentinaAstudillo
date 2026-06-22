@@ -28,12 +28,12 @@ jobs:
         id: deploy-step
         run: |
           kubectl apply -f k8s/rolling-update.yaml
-          kubectl rollout status deployment/duoc-app-deployment --timeout=60s
+          kubectl rollout status deployment/duoc-app-deployment --timeout=90s
 
-      - name: 🚨 Automated Rollback
+      - name: Automated Rollback
         if: failure()
         run: |
-          echo "⚠️ Despliegue fallido detectado. Iniciando Rollback automático..."
+          echo "Despliegue fallido detectado. Iniciando rollback automático..."
           kubectl rollout undo deployment/duoc-app-deployment
-          kubectl rollout status deployment/duoc-app-deployment --timeout=60s
-          echo "✅ Rollback completado."
+          kubectl rollout status deployment/duoc-app-deployment --timeout=90s
+          echo "Rollback completado. Deployment estable."
