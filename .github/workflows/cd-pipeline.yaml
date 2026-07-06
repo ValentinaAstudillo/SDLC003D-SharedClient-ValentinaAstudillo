@@ -1,10 +1,10 @@
-name: CD Pipeline EKS con Rollback
+name: CD Pipeline Blue-Green con Rollback
 
 on:
   workflow_dispatch:
 
 jobs:
-  deploy-to-eks:
+  deploy-blue-green:
     runs-on: ubuntu-latest
 
     steps:
@@ -19,21 +19,31 @@ jobs:
           aws-session-token: ${{ secrets.AWS_SESSION_TOKEN }}
           aws-region: us-east-1
 
-      - name: Configurar kubectl con EKS
+      - name: Configurar kubectl
         run: |
           aws eks update-kubeconfig --name duoc-eks-cluster-cli --region us-east-1
           kubectl get nodes
 
-      - name: Deploy to EKS
+      - name: Deploy Blue-Green
         id: deploy-step
         run: |
-          kubectl apply -f k8s/rolling-update.yaml
-          kubectl rollout status deployment/duoc-app-deployment --timeout=90s
+          kubectl apply -f k8s/blue-green.yaml
+          kubectl rollout status deployment/duoc-app-green --timeout=90s
 
-      - name: Automated Rollback
+      - name: Validación de salud Green
+        id: health-check
+        run: |
+          kubectl wait --for=condition=ready pod -l app=duoc-app,version=green --timeout=90s
+          kubectl get pods -l app=duoc-app,version=green
+
+      - name: Cambiar tráfico a Green
+        run: |
+          kubectl patch service duoc-app-bg-service -p '{"spec":{"selector":{"app":"duoc-app","version":"green"}}}'
+          echo "Tráfico cambiado correctamente a Green."
+
+      - name: Rollback automático a Blue
         if: failure()
         run: |
-          echo "Despliegue fallido detectado. Iniciando rollback automático..."
-          kubectl rollout undo deployment/duoc-app-deployment
-          kubectl rollout status deployment/duoc-app-deployment --timeout=90s
-          echo "Rollback completado. Deployment estable."
+          echo "Fallo detectado. Ejecutando rollback automático..."
+          kubectl patch service duoc-app-bg-service -p '{"spec":{"selector":{"app":"duoc-app","version":"blue"}}}'
+          echo "Rollback completado. El tráfico volvió a Blue."

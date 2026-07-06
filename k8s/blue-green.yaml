@@ -4,6 +4,7 @@ metadata:
   name: duoc-app-blue
   labels:
     app: duoc-app
+    version: blue
 
 spec:
   replicas: 1
@@ -22,7 +23,7 @@ spec:
     spec:
       containers:
       - name: node-app-container
-        image: 575508784185.dkr.ecr.us-east-1.amazonaws.com/duoc-lab:v1
+        image: valentinapaz/demo-api:v1
 
         ports:
         - containerPort: 3000
@@ -51,6 +52,7 @@ metadata:
 
 spec:
   selector:
+    app: duoc-app
     version: blue
 
   type: LoadBalancer
@@ -67,6 +69,7 @@ metadata:
   name: duoc-app-green
   labels:
     app: duoc-app
+    version: green
 
 spec:
   replicas: 1
@@ -85,7 +88,7 @@ spec:
     spec:
       containers:
       - name: node-app-container
-        image: 575508784185.dkr.ecr.us-east-1.amazonaws.com/duoc-lab:v2
+        image: valentinapaz/demo-api:v2
 
         ports:
         - containerPort: 3000
