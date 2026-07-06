@@ -198,12 +198,6 @@ La solución integra prácticas DevOps modernas mediante GitHub Actions,
 Docker Hub y Kubernetes, utilizando Blue-Green Deployment y rollback
 automático para reducir riesgos y mejorar la continuidad operacional.
 
-# Declaración de Uso de Inteligencia Artificial
-
-Se utilizó Inteligencia Artificial como apoyo para revisión técnica y
-redacción. La implementación, validación y adaptación del proyecto
-fueron realizadas y verificadas por la autora.
-
 # Referencias
 
 -   GitHub Actions Documentation
@@ -222,4 +216,4 @@ fueron realizadas y verificadas por la autora.
 
 **Evaluación:** Evaluación Final Transversal (EFT)
 
-**Institución:** Duoc UC
+**Institución:** Duoc UC - Sede Antonio Varas 
