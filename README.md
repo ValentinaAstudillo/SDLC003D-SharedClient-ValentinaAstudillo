@@ -1,153 +1,225 @@
-# SDLC003D - Shared Client CI/CD
+# Evaluación Final Transversal - AUY1104
 
-Aplicación de ejemplo desarrollada en **Node.js** y **Express**, utilizada para la implementación y validación de una arquitectura **CI/CD basada en GitHub Actions**, Docker y workflows reutilizables.
+# Operación Resiliencia en TechMarket
 
-## Objetivo
+## Tabla de Contenidos
 
-Este repositorio corresponde al componente **Cliente** de la solución CI/CD. Su responsabilidad es:
+-   Descripción
+-   Objetivos
+-   Arquitectura de la Solución
+-   Estructura del Proyecto
+-   Función de los Archivos Principales
+-   Herramientas Utilizadas
+-   Plantillas Reutilizables
+-   Pipeline CI
+-   Pipeline CD
+-   Estrategia de Despliegue
+-   Comparación entre Estrategias
+-   Justificación de Blue-Green
+-   Mecanismo de Remediación Automática
+-   Escenarios de Error
+-   Beneficios para el Negocio
+-   Conclusión
+-   Declaración de Uso de IA
+-   Referencias
+-   Integrante
 
-* Ejecutar validaciones automáticas en ramas de desarrollo.
-* Consumir workflows reutilizables definidos en un repositorio central.
-* Construir y publicar imágenes Docker mediante tags versionados.
-* Mantener separación entre procesos de validación y release.
+------------------------------------------------------------------------
 
-## Arquitectura
+# Descripción
 
-La solución está compuesta por dos repositorios:
+Este repositorio corresponde a la Evaluación Final Transversal (EFT) de
+la asignatura **Ciclo de Vida del Software II (AUY1104)**.
 
-### Repositorio Cliente
+El proyecto implementa un proceso de Integración Continua (CI) y
+Despliegue Continuo (CD) utilizando GitHub Actions, Docker Hub y
+Kubernetes, aplicando una estrategia **Blue-Green Deployment** y
+mecanismos de recuperación automática para aumentar la disponibilidad
+del servicio.
 
-`SDLC003D-SharedClient-ValentinaAstudillo`
+> Para esta evaluación se utiliza la infraestructura trabajada durante
+> el semestre. Tal como fue indicado por el docente, el rol descrito
+> para Amazon EKS se resuelve mediante **K3s sobre EC2**, mientras que
+> el rol de Amazon ECR se resuelve utilizando **Docker Hub**,
+> manteniendo la misma lógica de despliegue.
 
-Contiene:
+# Objetivos
 
-* Código fuente de la aplicación.
-* Pruebas automatizadas.
-* Dockerfile.
-* Workflow de validación (`test.yml`).
-* Workflow consumidor (`client.yaml`).
+## Objetivo General
 
-### Repositorio Central
+Implementar un pipeline CI/CD reutilizable que automatice la
+construcción, validación y despliegue del microservicio, incorporando
+una estrategia Blue-Green con rollback automático.
 
-`SDLC003D-SharedWorkflows-ValentinaAstudillo`
+## Objetivos Específicos
 
-Contiene:
+-   Automatizar la construcción de imágenes Docker.
+-   Publicar imágenes en Docker Hub.
+-   Reutilizar workflows mediante GitHub Actions.
+-   Implementar Blue-Green Deployment.
+-   Automatizar rollback.
+-   Reducir el riesgo durante despliegues.
 
-* Workflow reutilizable (`deploy-api.yaml`).
-* Lógica centralizada para pruebas, construcción y publicación Docker.
+# Arquitectura de la Solución
 
-## Pipelines Implementados
-
-### Pipeline de Validación
-
-Archivo:
-
-```text
-.github/workflows/test.yml
+``` mermaid
+flowchart TD
+A[Desarrollador] --> B[GitHub]
+B --> C[GitHub Actions]
+C --> D[Lint]
+C --> E[Security Audit]
+C --> F[Tests]
+F --> G[Build Docker]
+G --> H[Docker Hub]
+H --> I[Kubernetes K3s sobre EC2]
+I --> J[Blue]
+I --> K[Green]
+K --> L[Health Check]
+L --> M{¿Correcto?}
+M -->|Sí| N[Cambiar tráfico]
+M -->|No| O[Rollback]
 ```
 
-Se ejecuta cuando existe un push en ramas distintas de `main`.
+# Estructura del Proyecto
 
-Acciones realizadas:
+``` text
+SharedClient/
+ ├── .github/workflows
+ ├── k8s
+ ├── Dockerfile
+ └── package.json
 
-1. Checkout del repositorio.
-2. Instalación de dependencias.
-3. Ejecución de pruebas automatizadas.
-4. Validación de construcción Docker mediante:
-
-```bash
-docker build -t validacion-local:${{ github.sha }} .
+SharedWorkflows/
+ └── .github/workflows
 ```
 
-Este pipeline no publica imágenes y permite validar cambios antes del release.
+# Función de los Archivos Principales
 
-### Pipeline de Release
+  Archivo               Función
+  --------------------- -------------------------------
+  client.yaml           Ejecuta el pipeline principal
+  deploy-api.yaml       Build y Push Docker Hub
+  deploy-k8s-api.yaml   Despliegue Kubernetes
+  cd-pipeline.yaml      Blue-Green y rollback
+  hotfix.yml            Despliegue Hotfix
+  test.yml              Lint, Audit y Tests
+  blue-green.yaml       Estrategia Blue-Green
+  canary.yaml           Estrategia Canary
+  rolling-update.yaml   Estrategia Rolling Update
 
-Archivo:
+# Herramientas Utilizadas
 
-```text
-.github/workflows/client.yaml
+  Herramienta        Función
+  ------------------ ----------------------
+  Git                Control de versiones
+  GitHub             Repositorio
+  GitHub Actions     CI/CD
+  Docker             Contenedores
+  Docker Hub         Registro
+  Kubernetes (K3s)   Orquestación
+  Node.js            Aplicación
+
+# Plantillas Reutilizables
+
+Se implementan workflows reutilizables mediante `workflow_call` para
+desacoplar la lógica de construcción y despliegue, favoreciendo la
+reutilización y el mantenimiento.
+
+# Pipeline CI
+
+-   Instalación de dependencias.
+-   ESLint.
+-   npm audit.
+-   Tests.
+-   Build Docker.
+-   Publicación en Docker Hub.
+
+# Pipeline CD
+
+1.  Checkout.
+2.  Configuración del entorno.
+3.  Despliegue Blue-Green.
+4.  Health Check.
+5.  Cambio de tráfico.
+6.  Rollback automático si existe una falla.
+
+# Estrategia de Despliegue
+
+Se seleccionó **Blue-Green Deployment** para minimizar el downtime y
+permitir una recuperación inmediata mediante el cambio del Service entre
+la versión estable (Blue) y la nueva versión (Green).
+
+# Comparación entre Estrategias
+
+  Estrategia       Disponibilidad   Riesgo     Rollback
+  ---------------- ---------------- ---------- ------------
+  All-in-Once      Baja             Alto       Difícil
+  Rolling Update   Media            Medio      Medio
+  Canary           Alta             Bajo       Muy rápido
+  Blue-Green       Muy alta         Muy bajo   Inmediato
+
+# Justificación
+
+Blue-Green fue elegida por ofrecer alta disponibilidad, menor riesgo,
+validación previa al cambio de tráfico y recuperación rápida.
+
+# Mecanismo de Remediación Automática
+
+``` mermaid
+flowchart TD
+A[Deploy Green] --> B[Health Check]
+B --> C{Resultado}
+C -->|OK| D[Cambiar Service]
+C -->|Error| E[Rollback]
+E --> F[Volver a Blue]
 ```
 
-Se ejecuta únicamente mediante tags versionados:
+# Escenarios de Error
 
-```text
-v*.*.*
-```
+-   CrashLoopBackOff
+-   ImagePullBackOff
+-   Error HTTP 500
+-   Readiness Probe fallida
+-   Liveness Probe fallida
+-   Error de configuración
+-   Imagen inexistente
 
-Acciones realizadas:
+# Beneficios para el Negocio
 
-1. Invocación de workflow reutilizable central.
-2. Instalación de dependencias.
-3. Ejecución de pruebas.
-4. Construcción de imagen Docker.
-5. Publicación en Docker Hub.
+-   Mayor disponibilidad.
+-   Reducción del MTTR.
+-   Menor intervención manual.
+-   Automatización del despliegue.
+-   Mayor confiabilidad.
 
-## Ejecución Local
+# Conclusión
 
-Instalar dependencias:
+La solución integra prácticas DevOps modernas mediante GitHub Actions,
+Docker Hub y Kubernetes, utilizando Blue-Green Deployment y rollback
+automático para reducir riesgos y mejorar la continuidad operacional.
 
-```bash
-npm install
-```
+# Declaración de Uso de Inteligencia Artificial
 
-Ejecutar aplicación:
+Se utilizó Inteligencia Artificial como apoyo para revisión técnica y
+redacción. La implementación, validación y adaptación del proyecto
+fueron realizadas y verificadas por la autora.
 
-```bash
-npm start
-```
+# Referencias
 
-La aplicación queda disponible en:
+-   GitHub Actions Documentation
+-   Docker Documentation
+-   Docker Hub Documentation
+-   Kubernetes Documentation
+-   Node.js Documentation
 
-```text
-http://localhost:3000
-```
+# Integrante
 
-## Docker
+**Valentina Paz Astudillo Martinez**
 
-Construir imagen:
+------------------------------------------------------------------------
 
-```bash
-docker build -t demo-api .
-```
+**Asignatura:** Ciclo de Vida del Software II (AUY1104)
 
-Ejecutar contenedor:
+**Evaluación:** Evaluación Final Transversal (EFT)
 
-```bash
-docker run -p 3000:3000 demo-api
-```
-
-## Endpoints
-
-| Método | Endpoint    | Descripción                      |
-| ------ | ----------- | -------------------------------- |
-| GET    | /health     | Verifica estado de la aplicación |
-| GET    | /api/saludo | Devuelve saludo en formato JSON  |
-| POST   | /api/echo   | Retorna el contenido enviado     |
-
-## Versiones
-
-Tags utilizados:
-
-* v1.0.0
-* v1.0.1
-* v1.0.2
-* v1.0.3
-
-Release actual:
-
-**v1.0.3**
-
-## Tecnologías
-
-* Node.js
-* Express
-* Docker
-* GitHub Actions
-* Docker Hub
-
-## Autor
-
-Valentina Astudillo
-
-Evaluación - CI/CD Pipeline & Validación
+**Institución:** Duoc UC
