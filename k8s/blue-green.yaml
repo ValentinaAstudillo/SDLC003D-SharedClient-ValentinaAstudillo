@@ -23,7 +23,7 @@ spec:
     spec:
       containers:
       - name: node-app-container
-        image: valentinapaz/demo-api:v1
+        image: valentinapaz/demo-api:latest
 
         ports:
         - containerPort: 3000
@@ -88,7 +88,7 @@ spec:
     spec:
       containers:
       - name: node-app-container
-        image: valentinapaz/demo-api:v2
+        image: valentinapaz/demo-api:latest
 
         ports:
         - containerPort: 3000
