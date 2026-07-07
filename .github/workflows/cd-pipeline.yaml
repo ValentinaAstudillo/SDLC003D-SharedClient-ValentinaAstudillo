@@ -2,6 +2,15 @@ name: CD Pipeline Blue-Green con Rollback
 
 on:
   workflow_dispatch:
+    inputs:
+      simulate_failure:
+        description: "Simular falla para probar rollback automático"
+        required: true
+        default: "false"
+        type: choice
+        options:
+          - "false"
+          - "true"
 
 jobs:
   deploy-blue-green:
@@ -30,6 +39,12 @@ jobs:
           kubectl wait --for=condition=ready pod -l app=duoc-app,version=green --timeout=120s
           kubectl get pods -l app=duoc-app,version=green
 
+          if [ "${{ github.event.inputs.simulate_failure }}" = "true" ]; then
+            echo "Simulación de falla activada para prueba de caos."
+            echo "Se fuerza error en la validación para comprobar rollback automático."
+            exit 1
+          fi
+
       - name: Cambiar tráfico a Green
         run: |
           kubectl patch service duoc-app-bg-service -p '{"spec":{"selector":{"app":"duoc-app","version":"green"}}}'
@@ -40,4 +55,5 @@ jobs:
         run: |
           echo "Fallo detectado. Ejecutando rollback automático..."
           kubectl patch service duoc-app-bg-service -p '{"spec":{"selector":{"app":"duoc-app","version":"blue"}}}'
+          kubectl get service duoc-app-bg-service -o yaml
           echo "Rollback completado. El tráfico volvió a Blue."
