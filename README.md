@@ -20,7 +20,6 @@
 -   Escenarios de Error
 -   Beneficios para el Negocio
 -   Conclusión
--   Declaración de Uso de IA
 -   Referencias
 -   Integrante
 
